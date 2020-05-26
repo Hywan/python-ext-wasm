@@ -7,8 +7,10 @@ use pyo3::{
     types::{PyAny, PyFloat, PyLong},
 };
 use std::rc::Rc;
-use wasmer_runtime::{types::Type, Value as WasmValue};
-use wasmer_runtime_core::global::Global;
+use wasmer_runtime_core::{
+    global::Global,
+    types::{Type, Value as WasmValue},
+};
 
 #[pyclass]
 /// `ExportedGlobal` is a Python class that represents a WebAssembly

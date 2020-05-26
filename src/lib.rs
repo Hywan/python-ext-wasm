@@ -1,4 +1,4 @@
-#![deny(warnings)]
+//#![deny(warnings)]
 
 mod import;
 mod instance;

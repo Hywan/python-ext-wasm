@@ -1,6 +1,6 @@
 use pyo3::prelude::*;
 
-use wasmer_runtime_core::instance::DynFunc;
+use wasmer_runtime_core::typed_func::Func;
 
 /// Convenience functions to allow inspection of an exported
 /// function. Note: Python provides the `inspect` module for
@@ -10,5 +10,5 @@ use wasmer_runtime_core::instance::DynFunc;
 pub trait InspectExportedFunction {
     // A convenience method to move Wasmer runtime's dynamic function
     // object into scope for pyo3 constructors/callers
-    fn function(&self) -> PyResult<DynFunc>;
+    fn function(&self) -> PyResult<Func>;
 }

@@ -11,7 +11,7 @@ use pyo3::{
 };
 use std::{cmp::Ordering, convert::From, rc::Rc, slice};
 use wasmer_runtime::{self as runtime, Value as WasmValue};
-use wasmer_runtime_core::{instance::DynFunc, types::Type as WasmType};
+use wasmer_runtime_core::{typed_func, types::Type as WasmType};
 
 #[repr(u8)]
 pub enum ExportImportKind {
@@ -70,8 +70,8 @@ pub struct ExportedFunction {
 
 /// Implement the `InspectExportedFunction` trait.
 impl InspectExportedFunction for ExportedFunction {
-    fn function(&self) -> PyResult<DynFunc> {
-        match self.instance.exports.get(&self.function_name) {
+    fn function(&self) -> PyResult<typed_func::Func> {
+        match self.instance.exports.get_function(&self.function_name) {
             Ok(function) => Ok(function),
             Err(_) => Err(RuntimeError::py_err(format!(
                 "Function `{}` does not exist.",
@@ -84,12 +84,11 @@ impl InspectExportedFunction for ExportedFunction {
 pub(super) fn call_exported_func(
     py: Python,
     function_name_as_str: &str,
-    function: DynFunc,
+    function: typed_func::Func,
     arguments: &PyTuple,
 ) -> PyResult<PyObject> {
     // Check the given arguments match the exported function signature.
-    let signature = function.signature();
-    let parameters = signature.params();
+    let parameters = function.params();
 
     let number_of_parameters = parameters.len() as isize;
     let number_of_arguments = arguments.len() as isize;

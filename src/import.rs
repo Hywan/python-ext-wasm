@@ -2,12 +2,12 @@
 //! the host function logic.
 
 use pyo3::{exceptions::RuntimeError, prelude::*, types::PyDict, PyObject};
-use wasmer_runtime::{self as runtime, ImportObject};
+use wasmer_runtime_core::{self as core, import::ImportObject};
 
 #[cfg(not(all(unix, target_arch = "x86_64")))]
 pub(crate) fn build_import_object(
     _py: Python,
-    _module: &runtime::Module,
+    _module: &core::module::Module,
     imported_functions: &PyDict,
 ) -> PyResult<(ImportObject, Vec<PyObject>)> {
     if imported_functions.is_empty() {
@@ -22,56 +22,36 @@ pub(crate) fn build_import_object(
 #[cfg(all(unix, target_arch = "x86_64"))]
 pub(crate) fn build_import_object(
     py: Python,
-    module: &runtime::Module,
+    module: &core::module::Module,
     imported_functions: &PyDict,
 ) -> PyResult<(ImportObject, Vec<PyObject>)> {
     use pyo3::{
         types::{PyFloat, PyLong, PyString, PyTuple},
         AsPyPointer,
     };
-    use std::{collections::HashMap, sync::Arc};
-    use wasmer_runtime::{
-        types::{FuncIndex, FuncSig, Type},
-        Value,
+    use std::{borrow::Cow, collections::HashMap, sync::Arc};
+    use wasmer_runtime_core::{
+        import::Namespace,
+        typed_func::Func,
+        types::{ExternDescriptor, FuncDescriptor, Type, Value},
     };
-    use wasmer_runtime_core::{import::Namespace, structures::TypedIndex, typed_func::DynamicFunc};
 
-    let module_info = &module.info();
-    let import_descriptors: HashMap<(String, String), &FuncSig> = module_info
-        .imported_functions
+    let import_descriptors: HashMap<(Cow<str>, Cow<str>), &FuncDescriptor> = module
+        .imports()
         .iter()
-        .map(|(import_index, import_name)| {
-            let namespace = module_info
-                .namespace_table
-                .get(import_name.namespace_index)
-                .to_string();
-            let name = module_info
-                .name_table
-                .get(import_name.name_index)
-                .to_string();
-            let signature = module_info
-                .signatures
-                .get(
-                    *module_info
-                        .func_assoc
-                        .get(FuncIndex::new(import_index.index()))
-                        .ok_or_else(|| {
-                            RuntimeError::py_err(format!(
-                                "Failed to retrieve the signature index of the imported function {}.",
-                                import_index.index()
-                            ))
-                        })?,
-                )
-                .ok_or_else(|| {
-                    RuntimeError::py_err(format!(
-                        "Failed to retrieve the signature of the imported function {}.",
-                        import_index.index()
-                            ))
-                })?;
-
-            Ok(((namespace, name), signature))
+        .filter_map(|import_type| {
+            Some((
+                (
+                    Cow::from(import_type.module()),
+                    Cow::from(import_type.name()),
+                ),
+                match import_type.ty() {
+                    ExternDescriptor::Function(function_type) => function_type,
+                    _ => return None,
+                },
+            ))
         })
-        .collect::<PyResult<HashMap<(String, String), &FuncSig>>>()?;
+        .collect();
 
     let mut import_object = ImportObject::new();
     let mut host_function_references = Vec::with_capacity(imported_functions.len());
@@ -102,7 +82,7 @@ pub(crate) fn build_import_object(
             }
 
             let imported_function_signature = import_descriptors
-                .get(&(namespace_name.to_string(), function_name.to_string()))
+                .get(&(namespace_name, function_name))
                 .ok_or_else(|| RuntimeError::py_err(
                     format!(
                         "The imported function `{}.{}` does not have a signature in the WebAssembly module.",
@@ -137,7 +117,7 @@ pub(crate) fn build_import_object(
                     imported_function_signature
                         .params()
                         .iter()
-                        .chain(imported_function_signature.returns().iter()),
+                        .chain(imported_function_signature.results().iter()),
                 ) {
                     let ty = match annotation_value.to_string().as_str() {
                         "i32" | "I32" | "<class 'int'>" if expected_type == &Type::I32 => Type::I32,
@@ -165,16 +145,17 @@ pub(crate) fn build_import_object(
                 }
             } else {
                 input_types.extend(imported_function_signature.params());
-                output_types.extend(imported_function_signature.returns());
+                output_types.extend(imported_function_signature.results());
             }
 
             let function = function.to_object(py);
 
             host_function_references.push(function.clone_ref(py));
+            let function_type = FuncDescriptor::new(input_types, output_types.clone());
 
-            let function_implementation = DynamicFunc::new(
-                Arc::new(FuncSig::new(input_types, output_types.clone())),
-                move |_, inputs: &[Value]| -> Vec<Value> {
+            let function_implementation = Func::new_dynamic(
+                &function_type,
+                move |inputs: &[Value]| -> Result<Vec<Value>, core::error::RuntimeError> {
                     let gil = GILGuard::acquire();
                     let py = gil.python();
 
@@ -202,7 +183,7 @@ pub(crate) fn build_import_object(
                         Err(_) => PyTuple::new(py, vec![results]),
                     };
 
-                    results
+                    Ok(results
                         .iter()
                         .zip(output_types.iter())
                         .map(|(result, output)| match output {
@@ -242,7 +223,7 @@ pub(crate) fn build_import_object(
                                     .unwrap(),
                             ),
                         })
-                        .collect()
+                        .collect())
                 },
             );
 
