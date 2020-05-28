@@ -7,7 +7,7 @@ use wasmer_runtime_old::{self as runtime, ImportObject};
 #[cfg(not(all(unix, target_arch = "x86_64")))]
 pub(crate) fn build_import_object(
     _py: Python,
-    _module: &runtime::module::Module,
+    _module: &runtime::Module,
     imported_functions: &PyDict,
 ) -> PyResult<(ImportObject, Vec<PyObject>)> {
     if imported_functions.is_empty() {
