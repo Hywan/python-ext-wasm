@@ -126,7 +126,7 @@ impl Instance {
                     exported_globals.push((export_name.clone(), Rc::new(global.into())))
                 }
                 Export::Memory(memory) if exported_memory.is_none() => {
-                    exported_memory = Some(memory)
+                    exported_memory = Some(Rc::new(memory.into()))
                 }
                 _ => (),
             }
@@ -142,12 +142,7 @@ impl Instance {
                 },
             )?,
             match exported_memory {
-                Some(memory) => Some(Py::new(
-                    py,
-                    Memory {
-                        memory: Rc::new(memory.into()),
-                    },
-                )?),
+                Some(memory) => Some(Py::new(py, Memory { memory })?),
                 None => None,
             },
             Py::new(
