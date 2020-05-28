@@ -74,7 +74,7 @@ pub struct ExportedFunction {
 impl InspectExportedFunction for ExportedFunction {
     fn function(&self) -> PyResult<typed_func::Func> {
         match self.instance.exports().get_function(&self.function_name) {
-            Ok(function) => Ok(function),
+            Ok(function) => Ok(function.into()),
             Err(_) => Err(RuntimeError::py_err(format!(
                 "Function `{}` does not exist.",
                 self.function_name

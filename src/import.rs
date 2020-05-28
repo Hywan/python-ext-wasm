@@ -29,7 +29,7 @@ pub(crate) fn build_import_object(
         types::{PyFloat, PyLong, PyString, PyTuple},
         AsPyPointer,
     };
-    use std::{borrow::Cow, collections::HashMap, sync::Arc};
+    use std::{borrow::Cow, collections::HashMap};
     use wasmer_runtime_core::{
         import::Namespace,
         typed_func::Func,

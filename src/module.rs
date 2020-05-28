@@ -78,7 +78,9 @@ impl Module {
         for (export_name, export) in exports.iter() {
             match export {
                 Export::Function { .. } => exported_functions.push(export_name.clone()),
-                Export::Global(global) => exported_globals.push((export_name, Rc::new(global))),
+                Export::Global(global) => {
+                    exported_globals.push((export_name.clone(), Rc::new(global.into())))
+                }
                 Export::Memory(memory) if exported_memory.is_none() => {
                     exported_memory = Some(memory)
                 }
