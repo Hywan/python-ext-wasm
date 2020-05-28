@@ -77,10 +77,10 @@ impl Module {
 
         for (export_name, export) in exports.iter() {
             match export {
-                Export::Function { .. } => exported_functions.push(export_name),
+                Export::Function { .. } => exported_functions.push(export_name.clone()),
                 Export::Global(global) => exported_globals.push((export_name, Rc::new(global))),
                 Export::Memory(memory) if exported_memory.is_none() => {
-                    exported_memory = Some(Rc::new(memory))
+                    exported_memory = Some(memory)
                 }
                 _ => (),
             }
@@ -99,7 +99,12 @@ impl Module {
                     },
                 )?,
                 match exported_memory {
-                    Some(memory) => Some(Py::new(py, Memory { memory })?),
+                    Some(memory) => Some(Py::new(
+                        py,
+                        Memory {
+                            memory: Rc::new(memory.into()),
+                        },
+                    )?),
                     None => None,
                 },
                 Py::new(
