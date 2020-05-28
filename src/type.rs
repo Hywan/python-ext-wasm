@@ -41,6 +41,7 @@ impl From<&WasmType> for Type {
             WasmType::F32 => Type::F32,
             WasmType::F64 => Type::F64,
             WasmType::V128 => Type::V128,
+            _ => unimplemented!(),
         }
     }
 }

@@ -129,6 +129,7 @@ pub(super) fn call_exported_func(
                 WasmType::V128 => {
                     WasmValue::V128(argument.downcast::<PyLong>()?.extract::<u128>()?)
                 }
+                _ => unimplemented!(),
             },
         };
 
@@ -152,6 +153,7 @@ pub(super) fn call_exported_func(
             WasmValue::F32(result) => result.to_object(py),
             WasmValue::F64(result) => result.to_object(py),
             WasmValue::V128(result) => result.to_object(py),
+            _ => unimplemented!(),
         })
     } else {
         Ok(py.None())

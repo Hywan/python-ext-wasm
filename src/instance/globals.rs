@@ -35,6 +35,7 @@ impl ExportedGlobal {
             WasmValue::F32(result) => result.to_object(py),
             WasmValue::F64(result) => result.to_object(py),
             WasmValue::V128(result) => result.to_object(py),
+            _ => unimplemented!(),
         }
     }
 
@@ -55,6 +56,7 @@ impl ExportedGlobal {
             Type::F32 => WasmValue::F32(value.downcast::<PyFloat>()?.extract::<f32>()?),
             Type::F64 => WasmValue::F64(value.downcast::<PyFloat>()?.extract::<f64>()?),
             Type::V128 => WasmValue::V128(value.downcast::<PyLong>()?.extract::<u128>()?),
+            _ => unimplemented!(),
         });
 
         Ok(())

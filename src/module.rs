@@ -171,8 +171,11 @@ impl Module {
         let imports = self.module.imports();
         let mut items: Vec<&PyDict> = Vec::with_capacity(imports.len());
 
-        for ImportDescriptor { module, name, ty } in imports {
+        for import_descriptor in imports {
             let dict = PyDict::new(py);
+            let module = import_descriptor.module();
+            let name = import_descriptor.name();
+            let ty = import_descriptor.ty();
 
             match ty {
                 ExternDescriptor::Function(_) => {
@@ -292,10 +295,10 @@ impl Module {
         let serialized_module = <PyBytes as PyTryFrom>::try_from(bytes)?.as_bytes();
 
         // Deserialize the artifact.
-        match Artifact::deserialize(serialized_module) {
+        match unsafe { Artifact::deserialize(serialized_module) } {
             Ok(artifact) => {
                 // Get the module from the artifact.
-                match unsafe { core::load_cache_with(artifact, &core::default_compiler()) } {
+                match core::load_cache_with(artifact) {
                     Ok(module) => Ok(Py::new(py, Self { module })?),
                     Err(_) => Err(RuntimeError::py_err(
                         "Failed to compile the serialized module.",
