@@ -15,7 +15,7 @@ use std::{
     ptr,
     rc::Rc,
 };
-use wasmer_runtime_core::memory::Memory;
+use wasmer_runtime_old::memory::Memory;
 
 #[pyclass]
 pub struct Buffer {

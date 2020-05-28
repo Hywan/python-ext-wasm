@@ -16,21 +16,19 @@ use pyo3::{
 };
 use std::rc::Rc;
 use wasmer_runtime_core::{
-    self as core,
+    self as runtime_core,
     cache::Artifact,
-    export::Export,
-    import::imports,
     module::ExportIndex,
     types::{ExternDescriptor, ImportDescriptor, Type},
-    validate,
 };
+use wasmer_runtime_old::{self as runtime, imports, validate, Export};
 
 #[pyclass]
 #[text_signature = "(bytes)"]
 /// `Module` is a Python class that represents a WebAssembly module.
 pub struct Module {
     /// The underlying Rust WebAssembly module.
-    module: core::module::Module,
+    module: runtime::Module,
 }
 
 #[pymethods]
@@ -44,7 +42,7 @@ impl Module {
         let bytes = <PyBytes as PyTryFrom>::try_from(bytes)?.as_bytes();
 
         // Compile the module.
-        let module = core::compile(bytes).map_err(|error| {
+        let module = runtime::compile(bytes).map_err(|error| {
             RuntimeError::py_err(format!("Failed to compile the module:\n    {}", error))
         })?;
 
@@ -293,7 +291,7 @@ impl Module {
         match unsafe { Artifact::deserialize(serialized_module) } {
             Ok(artifact) => {
                 // Get the module from the artifact.
-                match core::load_cache_with(artifact) {
+                match runtime::load_cache_with(artifact) {
                     Ok(module) => Ok(Py::new(py, Self { module })?),
                     Err(_) => Err(RuntimeError::py_err(
                         "Failed to compile the serialized module.",

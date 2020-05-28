@@ -549,9 +549,9 @@ checksum = "3576a87f2ba00f6f106fdfcd16db1d698d648a26ad8e0573cad8537c3c362d2a"
 
 [[package]]
 name = "libc"
-version = "0.2.70"
+version = "0.2.71"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3baa92041a6fec78c687fa0cc2b3fae8884f743d672cf551bed1d6dac6988d0f"
+checksum = "9457b06509d27052635f90d6466700c65095fdf75409b3fbdd903e988b886f49"
 
 [[package]]
 name = "libloading"
@@ -1040,9 +1040,9 @@ checksum = "2d67a5a62ba6e01cb2192ff309324cb4875d0c451d55fe2319433abe7a05a8ee"
 
 [[package]]
 name = "syn"
-version = "1.0.25"
+version = "1.0.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f14a640819f79b72a710c0be059dce779f9339ae046c8bef12c361d56702146f"
+checksum = "ef781e621ee763a2a40721a8861ec519cb76966aee03bb5d00adb6a31dc1c1de"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1173,6 +1173,7 @@ version = "0.4.2-beta-11"
 dependencies = [
  "pyo3",
  "wasmer-runtime-core",
+ "wasmer-runtime-old",
 ]
 
 [[package]]
@@ -1347,6 +1348,13 @@ dependencies = [
  "wasmer-compiler",
  "wasmer-engine",
  "wasmer-runtime",
+]
+
+[[package]]
+name = "wasmer-runtime-old"
+version = "0.16.2"
+dependencies = [
+ "wasmer-runtime-core",
 ]
 
 [[package]]

@@ -2,7 +2,8 @@
 
 use pyo3::{exceptions::RuntimeError, prelude::*};
 use std::rc::Rc;
-use wasmer_runtime_core::{memory::Memory as WasmMemory, units::Pages};
+use wasmer_runtime_core::units::Pages;
+use wasmer_runtime_old::Memory as WasmMemory;
 
 pub mod buffer;
 pub mod view;

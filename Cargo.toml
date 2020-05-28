@@ -16,13 +16,14 @@ crate-type = ["cdylib"]
 
 [dependencies]
 pyo3 = { version = "0.10", features = ["extension-module"] }
+wasmer-runtime-old = { path = "../wasmer-reborn/lib/deprecated/runtime/", version = "0.16.2" }
 wasmer-runtime-core = { path = "../wasmer-reborn/lib/deprecated/runtime-core/", version = "0.16.2" }
 
 [features]
 default = ["backend-cranelift"]
-backend-cranelift = ["wasmer-runtime-core/default-backend-cranelift"]
-backend-singlepass = ["wasmer-runtime-core/default-backend-singlepass"]
-backend-llvm = ["wasmer-runtime-core/default-backend-llvm"]
+backend-cranelift = ["wasmer-runtime-old/default-backend-cranelift"]
+backend-singlepass = ["wasmer-runtime-old/default-backend-singlepass"]
+backend-llvm = ["wasmer-runtime-old/default-backend-llvm"]
 
 [package.metadata.maturin]
 project-url = [

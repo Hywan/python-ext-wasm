@@ -2,12 +2,12 @@
 //! the host function logic.
 
 use pyo3::{exceptions::RuntimeError, prelude::*, types::PyDict, PyObject};
-use wasmer_runtime_core::{self as core, import::ImportObject};
+use wasmer_runtime_old::{self as runtime, ImportObject};
 
 #[cfg(not(all(unix, target_arch = "x86_64")))]
 pub(crate) fn build_import_object(
     _py: Python,
-    _module: &core::module::Module,
+    _module: &runtime::module::Module,
     imported_functions: &PyDict,
 ) -> PyResult<(ImportObject, Vec<PyObject>)> {
     if imported_functions.is_empty() {
@@ -22,7 +22,7 @@ pub(crate) fn build_import_object(
 #[cfg(all(unix, target_arch = "x86_64"))]
 pub(crate) fn build_import_object(
     py: Python,
-    module: &core::module::Module,
+    module: &runtime::Module,
     imported_functions: &PyDict,
 ) -> PyResult<(ImportObject, Vec<PyObject>)> {
     use pyo3::{
@@ -36,6 +36,7 @@ pub(crate) fn build_import_object(
         types::{ExternDescriptor, FuncDescriptor, Type, Value},
     };
 
+    /*
     let import_descriptors: HashMap<(Cow<str>, Cow<str>), &FuncDescriptor> = module
         .imports()
         .iter()
@@ -52,10 +53,12 @@ pub(crate) fn build_import_object(
             ))
         })
         .collect();
+    */
 
     let mut import_object = ImportObject::new();
     let mut host_function_references = Vec::with_capacity(imported_functions.len());
 
+    /*
     for (namespace_name, namespace) in imported_functions.iter() {
         let namespace_name = namespace_name
             .downcast::<PyString>()
@@ -227,11 +230,12 @@ pub(crate) fn build_import_object(
                 },
             );
 
-            import_namespace.insert(function_name, function_implementation);
+            //import_namespace.insert(function_name, function_implementation);
         }
 
         import_object.register(namespace_name, import_namespace);
     }
+    */
 
     Ok((import_object, host_function_references))
 }

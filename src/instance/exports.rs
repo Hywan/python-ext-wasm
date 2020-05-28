@@ -10,10 +10,8 @@ use pyo3::{
     ToPyObject,
 };
 use std::{cmp::Ordering, convert::From, rc::Rc, slice};
-use wasmer_runtime_core::{
-    self as core, typed_func,
-    types::{Type as WasmType, Value as WasmValue},
-};
+use wasmer_runtime_core::{typed_func, types::Type as WasmType};
+use wasmer_runtime_old::{self as runtime, Value as WasmValue};
 
 #[repr(u8)]
 pub enum ExportImportKind {
@@ -64,7 +62,7 @@ impl ToPyObject for ExportImportKind {
 /// `__call__` Python class method.
 pub struct ExportedFunction {
     /// The underlying Rust WebAssembly instance.
-    instance: Rc<core::Instance>,
+    instance: Rc<runtime::Instance>,
 
     /// The exported function name from the WebAssembly module.
     function_name: String,
@@ -232,7 +230,7 @@ impl ExportedFunction {
 /// ```
 pub struct ExportedFunctions {
     /// The underlying Rust WebAssembly instance.
-    pub(crate) instance: Rc<core::Instance>,
+    pub(crate) instance: Rc<runtime::Instance>,
 
     /// Available exported function names from the WebAssembly module.
     pub(crate) functions: Vec<String>,

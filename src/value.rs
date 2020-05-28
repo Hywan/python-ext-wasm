@@ -1,7 +1,7 @@
 //! The `Value` Python class to build WebAssembly values.
 
 use pyo3::{class::basic::PyObjectProtocol, prelude::*, PyNativeType};
-use wasmer_runtime_core::types::Value as WasmValue;
+use wasmer_runtime_old::Value as WasmValue;
 
 #[pyclass]
 /// The `Value` class represents a WebAssembly value.

@@ -26,7 +26,7 @@ use pyo3::{
     PyObject, PyTryFrom, Python,
 };
 use std::{collections::HashMap, rc::Rc};
-use wasmer_runtime_core::{self as core, export::Export};
+use wasmer_runtime_old::{self as runtime, Export};
 
 #[pyclass]
 #[text_signature = "(bytes, imported_functions={})"]
@@ -40,7 +40,7 @@ use wasmer_runtime_core::{self as core, export::Export};
 /// instance = Instance(wasm_bytes)
 /// ```
 pub struct Instance {
-    pub(crate) instance: Rc<core::Instance>,
+    pub(crate) instance: Rc<runtime::Instance>,
 
     /// All WebAssembly exported functions represented by an
     /// `ExportedFunctions` object.
@@ -64,7 +64,7 @@ pub struct Instance {
 
 impl Instance {
     pub(crate) fn inner_new(
-        instance: Rc<core::Instance>,
+        instance: Rc<runtime::Instance>,
         exports: Py<ExportedFunctions>,
         memory: Option<Py<Memory>>,
         globals: Py<ExportedGlobals>,
@@ -93,7 +93,7 @@ impl Instance {
         let bytes = <PyBytes as PyTryFrom>::try_from(bytes)?.as_bytes();
 
         // Compile the module.
-        let module = core::compile(bytes).map_err(|error| {
+        let module = runtime::compile(bytes).map_err(|error| {
             RuntimeError::py_err(format!("Failed to compile the module:\n    {}", error))
         })?;
 
