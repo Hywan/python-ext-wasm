@@ -10,8 +10,10 @@ use pyo3::{
     ToPyObject,
 };
 use std::{cmp::Ordering, convert::From, rc::Rc, slice};
-use wasmer_runtime::{self as runtime, Value as WasmValue};
-use wasmer_runtime_core::{typed_func, types::Type as WasmType};
+use wasmer_runtime_core::{
+    self as core, typed_func,
+    types::{Type as WasmType, Value as WasmValue},
+};
 
 #[repr(u8)]
 pub enum ExportImportKind {
@@ -62,7 +64,7 @@ impl ToPyObject for ExportImportKind {
 /// `__call__` Python class method.
 pub struct ExportedFunction {
     /// The underlying Rust WebAssembly instance.
-    instance: Rc<runtime::Instance>,
+    instance: Rc<core::Instance>,
 
     /// The exported function name from the WebAssembly module.
     function_name: String,
@@ -71,7 +73,7 @@ pub struct ExportedFunction {
 /// Implement the `InspectExportedFunction` trait.
 impl InspectExportedFunction for ExportedFunction {
     fn function(&self) -> PyResult<typed_func::Func> {
-        match self.instance.exports.get_function(&self.function_name) {
+        match self.instance.exports().get_function(&self.function_name) {
             Ok(function) => Ok(function),
             Err(_) => Err(RuntimeError::py_err(format!(
                 "Function `{}` does not exist.",
@@ -189,7 +191,7 @@ impl ExportedFunction {
         let args = annotations.keys();
 
         for ty in &signature
-            .returns()
+            .results()
             .iter()
             .map(Into::into)
             .collect::<Vec<Type>>()
@@ -228,7 +230,7 @@ impl ExportedFunction {
 /// ```
 pub struct ExportedFunctions {
     /// The underlying Rust WebAssembly instance.
-    pub(crate) instance: Rc<runtime::Instance>,
+    pub(crate) instance: Rc<core::Instance>,
 
     /// Available exported function names from the WebAssembly module.
     pub(crate) functions: Vec<String>,

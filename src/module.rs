@@ -15,10 +15,10 @@ use pyo3::{
     PyTryFrom,
 };
 use std::rc::Rc;
-use wasmer_runtime::{self as runtime, Export};
 use wasmer_runtime_core::{
-    self as runtime_core,
+    self as core,
     cache::Artifact,
+    export::Export,
     import::imports,
     module::ExportIndex,
     types::{ExternDescriptor, ImportDescriptor, Type},
@@ -30,7 +30,7 @@ use wasmer_runtime_core::{
 /// `Module` is a Python class that represents a WebAssembly module.
 pub struct Module {
     /// The underlying Rust WebAssembly module.
-    module: runtime::Module,
+    module: core::module::Module,
 }
 
 #[pymethods]
@@ -44,7 +44,7 @@ impl Module {
         let bytes = <PyBytes as PyTryFrom>::try_from(bytes)?.as_bytes();
 
         // Compile the module.
-        let module = runtime::compile(bytes).map_err(|error| {
+        let module = core::compile(bytes).map_err(|error| {
             RuntimeError::py_err(format!("Failed to compile the module:\n    {}", error))
         })?;
 
@@ -75,7 +75,7 @@ impl Module {
         let mut exported_globals = Vec::new();
         let mut exported_memory = None;
 
-        for (export_name, export) in exports {
+        for (export_name, export) in exports.iter() {
             match export {
                 Export::Function { .. } => exported_functions.push(export_name),
                 Export::Global(global) => exported_globals.push((export_name, Rc::new(global))),
@@ -252,7 +252,7 @@ impl Module {
     #[text_signature = "($self, name, index=0)"]
     #[args(index = "0")]
     fn custom_section<'p>(&self, py: Python<'p>, name: String, index: usize) -> PyObject {
-        match self.module.info().custom_sections.get(&name) {
+        match self.module.custom_sections(&name) {
             Some(bytes) => match bytes.get(index) {
                 Some(bytes) => PyBytes::new(py, bytes).into_py(py),
                 None => py.None(),
@@ -288,9 +288,7 @@ impl Module {
         match Artifact::deserialize(serialized_module) {
             Ok(artifact) => {
                 // Get the module from the artifact.
-                match unsafe {
-                    runtime_core::load_cache_with(artifact, &runtime::default_compiler())
-                } {
+                match unsafe { core::load_cache_with(artifact, &core::default_compiler()) } {
                     Ok(module) => Ok(Py::new(py, Self { module })?),
                     Err(_) => Err(RuntimeError::py_err(
                         "Failed to compile the serialized module.",

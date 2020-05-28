@@ -26,7 +26,7 @@ use pyo3::{
     PyObject, PyTryFrom, Python,
 };
 use std::{collections::HashMap, rc::Rc};
-use wasmer_runtime::{self as runtime, Export};
+use wasmer_runtime_core::{self as core, export::Export};
 
 #[pyclass]
 #[text_signature = "(bytes, imported_functions={})"]
@@ -40,7 +40,7 @@ use wasmer_runtime::{self as runtime, Export};
 /// instance = Instance(wasm_bytes)
 /// ```
 pub struct Instance {
-    pub(crate) instance: Rc<runtime::Instance>,
+    pub(crate) instance: Rc<core::Instance>,
 
     /// All WebAssembly exported functions represented by an
     /// `ExportedFunctions` object.
@@ -64,7 +64,7 @@ pub struct Instance {
 
 impl Instance {
     pub(crate) fn inner_new(
-        instance: Rc<runtime::Instance>,
+        instance: Rc<core::Instance>,
         exports: Py<ExportedFunctions>,
         memory: Option<Py<Memory>>,
         globals: Py<ExportedGlobals>,
@@ -93,7 +93,7 @@ impl Instance {
         let bytes = <PyBytes as PyTryFrom>::try_from(bytes)?.as_bytes();
 
         // Compile the module.
-        let module = runtime::compile(bytes).map_err(|error| {
+        let module = core::compile(bytes).map_err(|error| {
             RuntimeError::py_err(format!("Failed to compile the module:\n    {}", error))
         })?;
 
@@ -119,9 +119,9 @@ impl Instance {
         let mut exported_globals = Vec::new();
         let mut exported_memory = None;
 
-        for (export_name, export) in exports {
+        for (export_name, export) in exports.iter() {
             match export {
-                Export::Function { .. } => exported_functions.push(export_name),
+                Export::Function(_) => exported_functions.push(export_name),
                 Export::Global(global) => exported_globals.push((export_name, Rc::new(global))),
                 Export::Memory(memory) if exported_memory.is_none() => {
                     exported_memory = Some(Rc::new(memory))
@@ -188,10 +188,8 @@ impl Instance {
                 self.exports_index_to_name = Some(
                     self.instance
                         .exports()
-                        .filter(|(_, export)| match export {
-                            Export::Function { .. } => true,
-                            _ => false,
-                        })
+                        .iter()
+                        .functions()
                         .map(|(name, _)| (self.instance.resolve_func(&name).unwrap(), name.clone()))
                         .collect(),
                 );
