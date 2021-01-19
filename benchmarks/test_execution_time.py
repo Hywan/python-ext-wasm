@@ -1,68 +1,43 @@
-from wasmer import engine, Store, Module, Instance
+from wasmer import engine, Store, Module, Instance, wasi
 from wasmer_compiler_cranelift import Compiler as Cranelift
 from wasmer_compiler_llvm import Compiler as LLVM
 from wasmer_compiler_singlepass import Compiler as Singlepass
+import wasmtime
 
-TEST_BYTES = open('benchmarks/nbody.wasm', 'rb').read()
+TEST_BYTES = open('benchmarks/qjs.wasm', 'rb').read()
 
-N = 100000
-
-def test_benchmark_execution_time_nbody_cranelift_jit(benchmark):
-    store = Store(engine.JIT(Cranelift))
+def _test(compiler, benchmark):
+    store = Store(engine.JIT(compiler))
     module = Module(store, TEST_BYTES)
-    instance = Instance(module)
-    main = instance.exports.main
+
+    wasi_version = wasi.get_version(module, strict=True)
+    wasi_env = wasi.StateBuilder('qjs').argument('--eval').argument('console.log("hello")').finalize()
+
+    import_object = wasi_env.generate_import_object(store, wasi_version)
+
+    instance = Instance(module, import_object)
+    main = instance.exports._start
 
     @benchmark
     def bench():
-        _ = main(N)
+        _ = main()
 
-def test_benchmark_execution_time_nbody_cranelift_native(benchmark):
-    store = Store(engine.Native(Cranelift))
-    module = Module(store, TEST_BYTES)
-    instance = Instance(module)
-    main = instance.exports.main
 
-    @benchmark
-    def bench():
-        _ = main(N)
+def test_benchmark_execution_time_cranelift(benchmark):
+    _test(Cranelift, benchmark)
 
-def test_benchmark_execution_time_nbody_llvm_jit(benchmark):
-    store = Store(engine.JIT(LLVM))
-    module = Module(store, TEST_BYTES)
-    instance = Instance(module)
-    main = instance.exports.main
+def test_benchmark_execution_time_llvm(benchmark):
+    _test(LLVM, benchmark)
 
-    @benchmark
-    def bench():
-        _ = main(N)
+def test_benchmark_execution_time_singlepass(benchmark):
+    _test(Singlepass, benchmark)
 
-def test_benchmark_execution_time_nbody_llvm_native(benchmark):
-    store = Store(engine.Native(LLVM))
-    module = Module(store, TEST_BYTES)
-    instance = Instance(module)
-    main = instance.exports.main
+def test_benchmark_execution_time_wasmtime(benchmark):
+    config = wasmtime.Config()
+    config.strategy = "cranelift"
+    engine = wasmtime.Engine(config)
+    store = wasmtime.Store(engine)
 
     @benchmark
     def bench():
-        _ = main(N)
-
-def test_benchmark_execution_time_nbody_singlepass_jit(benchmark):
-    store = Store(engine.JIT(Singlepass))
-    module = Module(store, TEST_BYTES)
-    instance = Instance(module)
-    main = instance.exports.main
-
-    @benchmark
-    def bench():
-        _ = main(N)
-
-def test_benchmark_execution_time_nbody_singlepass_native(benchmark):
-    store = Store(engine.Native(Singlepass))
-    module = Module(store, TEST_BYTES)
-    instance = Instance(module)
-    main = instance.exports.main
-
-    @benchmark
-    def bench():
-        _ = main(N)
+        _ = wasmtime.Module(store.engine, TEST_BYTES)

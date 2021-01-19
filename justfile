@@ -122,7 +122,7 @@ test files='tests':
 
 # Run the benchmarks.
 benchmark files='benchmarks':
-	@for BENCH in {{files}}/*.py; do py.test -v -s $BENCH; done
+	@for BENCH in {{files}}/*.py; do py.test -v $BENCH; done
 
 # Generate the documentation.
 doc:
